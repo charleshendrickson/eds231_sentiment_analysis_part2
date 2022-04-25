@@ -23,6 +23,7 @@ library(tidytext)
 library(lubridate)
 library(wordcloud) #visualization of common words in the data set
 library(reshape2)
+library(sentimentr)
 ```
 
 Last week we used the tidytext approach to sentiment analysis for Nexis Uni .pdf data on coverage of the recent IPCC report. This week we will look at the conversation on Twitter about the same report. We'll start with the familiar tidy approach, and then introduce the quanteda package later.
@@ -49,7 +50,6 @@ tweets %>%
 ```
 
 ```{r cleaning_tweets}
-
 #let's clean up the URLs from the tweets
 tweets$text <- gsub("http[^[:space:]]*", "",tweets$text)
 tweets$text <- str_to_lower(tweets$text)
@@ -229,17 +229,13 @@ tagged_tib<- tidy(dfm_tagged)
 
 tagged_tib %>%
    count(term) %>%
-   with(wordcloud(term, n, max.words = 100))
+   with(wordcloud(term, n, max.words = 50))
 
 
 ```
 
 ```{r}
-#decreasing order bar chart 
-tstat_freq <- factor(tstat_freq$frequency, 
-                     levels = tstat_freq$frequency[order(tstat_freq$feature, decreasing = TRUE)])
-
-
+# Plot Top 10 Most Tagged Twitter Accounts in IPCC Dataset
 ggplot(data = tstat_freq, aes(y = reorder(feature, -rank), x = frequency)) +
   geom_bar(stat = "identity") +
   labs(title = "Top 10 Most Tagged Twitter Accounts in IPCC Dataset",
@@ -263,6 +259,46 @@ head(textstat_polarity(tokens, data_dictionary_LSD2015, fun = sent_logit))
 
 
 ```
+
+5. The Twitter data download comes with a variable called "Sentiment" that must be calculated by Brandwatch.  Use your own method to assign each tweet a polarity score (Positive, Negative, Neutral) and compare your classification to Brandwatch's (hint: you'll need to revisit the "raw_tweets" data frame).
+
+```{r}
+#My method for assigning polarity score
+
+dat2<- raw_tweets[,c(4,6)] # Extract Date and Title fields
+
+#Create text, id, and date columns
+tweets2 <- tibble(text = dat2$Title,
+                  id = seq(1:length(dat2$Title)),
+                 date = as.Date(dat2$Date,'%m/%d/%y'))
+
+
+#clean up the URLs from the tweets
+tweets2$text <- gsub("http[^[:space:]]*", "",tweets2$text)
+tweets2$text <- str_to_lower(tweets2$text)
+
+#Remove twitter account mentions from the text field of the tweets tibble.
+tweets2$text <- gsub("@[^[:space:]]*", "",tweets2$text)
+
+
+#This function allows for us to approximate the sentiment (polarity) of text by sentence.
+
+sent <- sentiment(tweets2$text)
+
+sent$polarity <- ifelse(sent$sentiment <0, -1, ifelse(sent$sentiment > 0, 1, 0))
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
 
 ### Assignment
 
