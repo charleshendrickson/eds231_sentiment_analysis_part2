@@ -263,7 +263,7 @@ head(textstat_polarity(tokens, data_dictionary_LSD2015, fun = sent_logit))
 5. The Twitter data download comes with a variable called "Sentiment" that must be calculated by Brandwatch.  Use your own method to assign each tweet a polarity score (Positive, Negative, Neutral) and compare your classification to Brandwatch's (hint: you'll need to revisit the "raw_tweets" data frame).
 
 ```{r}
-#My method for assigning polarity score
+#Assigning polarity score
 
 dat2<- raw_tweets[,c(4,6)] # Extract Date and Title fields
 
@@ -280,20 +280,53 @@ tweets2$text <- str_to_lower(tweets2$text)
 #Remove twitter account mentions from the text field of the tweets tibble.
 tweets2$text <- gsub("@[^[:space:]]*", "",tweets2$text)
 
+#Run the raw `character` vector through the `get_sentences` function
+#Sentiment function allows for us to approximate the sentiment (polarity) of text by sentence.
+mytext <- get_sentences(tweets2$text) %>% 
+  sentiment() %>% 
+  rename(sentiment_score = sentiment)
 
-#This function allows for us to approximate the sentiment (polarity) of text by sentence.
+#Assign sentiment based on polarity
+sent_assigned <- mytext %>% 
+  group_by(element_id) %>% 
+  summarise(sentiment_score = mean(sentiment_score))
 
-sent <- sentiment(tweets2$text)
-
-sent$polarity <- ifelse(sent$sentiment <0, -1, ifelse(sent$sentiment > 0, 1, 0))
+sent_assigned$sentiment <- ifelse(sent_assigned$sentiment_score <0, "Negative", ifelse(sent_assigned$sentiment_score > 0, "Positive", "Neutral"))
 
 ```
+
 
 ```{r}
+#Find the number of tweets with each sentiment type for my sentiment calculation
+my_raw_sentiment <- sent_assigned %>%
+  group_by(sentiment) %>% 
+  summarise(sentiment_count = n())
 
+
+#Plot the count per sentiment 
+ggplot(data = my_raw_sentiment, aes(x = Sentiment, y = sentiment_count)) +
+         geom_bar(stat = "identity", aes(fill = Sentiment)) +
+  labs(title = "My Sentiment Classification",
+         x= "Sentiment",
+         y= "Count")
 ```
 
 
+```{r}
+#Find the number of tweets with each sentiment type for Brandwatch 
+raw_sentiment <- raw_tweets %>%
+  group_by(Sentiment) %>% 
+  summarise(sentiment_count = n())
+
+#Plot the count per sentiment 
+ggplot(data = raw_sentiment, aes(x = Sentiment, y = sentiment_count)) +
+         geom_bar(stat = "identity", aes(fill = Sentiment)) +
+  labs(title = "Brandwatch Sentiment Classification",
+         x= "Sentiment",
+         y= "Count")
+```
+
+**My sentiment classification method resulted in many more 'negative' and 'neutral' sentiments and much fewer 'neutral' scores being assigned to the tweets data compared to Brandwatch's methods. These results could be due to my method of using the the 'get_sentences()' and 'sentiment()' function to assign a sentiment score (<0, 0, >0) to each sentence and then taking the mean of the sentiment score per tweet. This method makes it much more difficult for a sentence to be neutral becuase all the sentences within a tweet would need to have a sentiment score equal to zero in order for that tweet to have a 'neutral' sentiment." 
 
 
 
