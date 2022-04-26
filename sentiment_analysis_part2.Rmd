@@ -1,12 +1,15 @@
 ---
-title: "Topic 4: Sentiment Analysis II"
+title: 'Topic 4: Sentiment Analysis II'
 author: "Charles Hendrickson"
-date: "4/24/2022"
-output: html_document
+date: "4/26/2022"
+output:
+  pdf_document: default
+  latex_engine: xelatex
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 This .Rmd available here: <https://raw.githubusercontent.com/MaRo406/EDS_231-text-sentiment/main/topic_4.Rmd>
@@ -39,7 +42,7 @@ tweets <- tibble(text = dat$Title,
                  date = as.Date(dat$Date,'%m/%d/%y'))
 
 
-head(tweets$text, n = 10)
+#head(tweets$text, n = 10)
 
 #simple plot of tweets per day
 tweets %>%
@@ -49,6 +52,8 @@ tweets %>%
 
 ```
 
+# Q1
+Remove twitter account mentions
 ```{r cleaning_tweets}
 #let's clean up the URLs from the tweets
 tweets$text <- gsub("http[^[:space:]]*", "",tweets$text)
@@ -57,7 +62,7 @@ tweets$text <- str_to_lower(tweets$text)
 #Remove twitter account mentions from the text field of the tweets tibble.
 tweets$text <- gsub("@[^[:space:]]*", "",tweets$text)
 
-head(tweets$text, n = 10)
+#head(tweets$text, n = 10)
 
 #load sentiment lexicons
 bing_sent <- get_sentiments('bing')
@@ -117,7 +122,8 @@ daily_sent %>%
 
 ```
 
-2. Compare the ten most common terms in the tweets per day.  Do you notice anything interesting?
+# Q2 
+Compare the ten most common terms in the tweets per day. Do you notice anything interesting?
 ```{r}
 #Word count 
 text_wordcounts <- words  %>% count(word, sort = TRUE)
@@ -144,15 +150,13 @@ ggplot(data = common_terms_date, aes(x = date, y = n)) +
 
 ```
 
-I noticed that the number of tweets per day with the ten most common terms peaked on April 4th, 2022. This is likely because the Summary for Policymakers of the IPCC Working Group III report, Climate Change 2022: Mitigation of climate change was approved on April 4 2022, by 195 member governments of the IPCC. 
+**I noticed that the number of tweets per day with the ten most common terms peaked on April 4th, 2022. This is likely because the Summary for Policymakers of the IPCC Working Group III report, Climate Change 2022: Mitigation of climate change was approved on April 4 2022, by 195 member governments of the IPCC. The most common terms were 'IPCC', 'climate', 'report', and 'world' which was not surprising because the IPCC tweet data is going to contain a lot of references to reports on climate change around the world. However, I expected 'global' to be used more often then 'world' because it is often included in the term 'global warming' which is a key term for the IPCC.**
 
 
-
-
-3. Adjust the wordcloud in the "wordcloud" chunk by coloring the positive and negative words so they are identifiable.
+# Q3 
+Adjust the wordcloud in the "wordcloud" chunk by coloring the positive and negative words so they are identifiable.
 
 Now let's try a new type of text visualization: the wordcloud.
-
 ```{r wordcloud}
 words %>%
    anti_join(stop_words) %>%
@@ -181,14 +185,14 @@ quanteda has its own built in functions for cleaning text data. Let's take a loo
 
 ```{r create_corpus}
 corpus <- corpus(dat$Title) #enter quanteda
-summary(corpus)
+#summary(corpus)
 ```
 
 ```{r quanteda_cleaning}
 tokens <- tokens(corpus) #tokenize the text so each doc (page, in this case) is a list of tokens (words)
 
 #examine the uncleaned version
-tokens
+#tokens
 
 #clean it up
 tokens <- tokens(tokens, remove_punct = TRUE,
@@ -205,14 +209,15 @@ tokens <- tokens_tolower(tokens)
 We can use the kwic function (keywords-in-context) to briefly examine the context in which certain words or patterns appear.
 
 ```{r initial_analysis}
-head(kwic(tokens, pattern = "climate", window = 3))
+#head(kwic(tokens, pattern = "climate", window = 3))
 
-head(kwic(tokens, pattern = phrase("climate change"), window = 3))
+#head(kwic(tokens, pattern = phrase("climate change"), window = 3))
 
 
 ```
 
-4. Let's say we are interested in the most prominent entities in the Twitter discussion.  Which are the top 10 most tagged accounts in the data set? Hint: the "explore_hashtags" chunk is a good starting point.
+# Q4 
+Let's say we are interested in the most prominent entities in the Twitter discussion.  Which are the top 10 most tagged accounts in the data set? Hint: the "explore_hashtags" chunk is a good starting point.
 
 ```{r explore_hashtags}
 tagged_tweets <- tokens(corpus, remove_punct = TRUE) %>% 
@@ -255,12 +260,13 @@ topfeatures(dfm, 12)
 
 dfm.sentiment <- dfm_lookup(dfm, dictionary = data_dictionary_LSD2015)
 
-head(textstat_polarity(tokens, data_dictionary_LSD2015, fun = sent_logit))
+#head(textstat_polarity(tokens, data_dictionary_LSD2015, fun = sent_logit))
 
 
 ```
 
-5. The Twitter data download comes with a variable called "Sentiment" that must be calculated by Brandwatch.  Use your own method to assign each tweet a polarity score (Positive, Negative, Neutral) and compare your classification to Brandwatch's (hint: you'll need to revisit the "raw_tweets" data frame).
+# Q5
+The Twitter data download comes with a variable called "Sentiment" that must be calculated by Brandwatch.  Use your own method to assign each tweet a polarity score (Positive, Negative, Neutral) and compare your classification to Brandwatch's (hint: you'll need to revisit the "raw_tweets" data frame).
 
 ```{r}
 #Assigning polarity score
@@ -326,12 +332,7 @@ ggplot(data = raw_sentiment, aes(x = Sentiment, y = sentiment_count)) +
          y= "Count")
 ```
 
-**My sentiment classification method resulted in many more 'negative' and 'neutral' sentiments and much fewer 'neutral' scores being assigned to the tweets data compared to Brandwatch's methods. These results could be due to my method of using the the 'get_sentences()' and 'sentiment()' function to assign a sentiment score (<0, 0, >0) to each sentence and then taking the mean of the sentiment score per tweet. This method makes it much more difficult for a sentence to be neutral becuase all the sentences within a tweet would need to have a sentiment score equal to zero in order for that tweet to have a 'neutral' sentiment." 
-
-
-
-
-
+**My sentiment classification method resulted in many more 'negative' and 'positive' sentiments and much fewer 'neutral' sentiments being assigned to the tweets data compared to Brandwatch's methods. These results could be due to my methods, in which I first used the 'get_sentences()' and 'sentiment()' function to assign a polarity score (<0, 0, >0) to each sentence. Next, I took the mean of the polarity scores for each sentence to get an average polarity score for each tweet. I think used a ifelse() statement to assign the tweet a negative, positive, or neutral sentiment based on if its its mean polarity score is less than zero, greater than zero, or equal to zero respectively. However, this method makes it much more difficult for a sentence to be neutral because all the sentences within a tweet would need to have a polarity score of zero in order for that tweet to have a 'neutral' sentiment. Thus, tweets that are made up of a majority of neutral sentences will still be classified as positive or negative based on a minority of the sentiment score makeup."**
 
 ### Assignment
 
